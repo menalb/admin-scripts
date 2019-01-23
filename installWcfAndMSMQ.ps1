@@ -20,15 +20,14 @@ $runInstalls = {
         Write-Host "$role Installed"
     }
 
-    Function InstallMSMQ() {
-        @(
-            "MSMQ","AS-WAS-Support","AS-MSMQ-Activation","AS-TCP-Activation"
-        ) | ForEach-Object { InstallRole $_ }
-    }
+    Function InstallRoles {
+        param([string[]]$roles)
+        $roles | ForEach-Object { InstallRole $_ }   
+    } 
     Function InstallIIS() {
-        @(
-            "web-server", "Web-Mgmt-Console","Web-Mgmt-Service","Web-Scripting-Tools","Web-ISAPI-Ext","Web-ISAPI-Filter","Web-AppInit"
-            ) | ForEach-Object { InstallRole $_ }
+        InstallRoles @(
+            "web-server", "Web-Mgmt-Console", "Web-Mgmt-Service", "Web-Scripting-Tools", "Web-ISAPI-Ext", "Web-ISAPI-Filter", "Web-AppInit"
+        )
        
         $iisWebsitePath = "IIS:\Sites"
 
@@ -39,24 +38,26 @@ $runInstalls = {
         New-WebHandler -Name "svc-ISAPI-4.0_32bit" -Path "*.svc" -Verb 'GET,POST' -Modules IsapiModule -PSPath $iisWebsitePath
         New-WebHandler -Name "svc-ISAPI-4.0_64bit" -Path "*.svc" -Verb 'GET,POST' -Modules IsapiModule -PSPath $iisWebsitePath
     }
+
     Function InstallASPNET() {
-        @(
-            "Web-Asp-Net45","Web-Net-Ext45"
-        ) | ForEach-Object { InstallRole $_ }
+        InstallRoles @(
+            "Web-Asp-Net45", "Web-Net-Ext45"
+        )
     }
   
     Function InstallDotNet {
-        param([string]$dotnetUrl,[string]$dotnetSetupFile)
+        param([string]$dotnetUrl, [string]$dotnetSetupFile)
         
         $start_time = Get-Date
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Invoke-WebRequest -Uri $dotnetUrl -OutFile $dotnetSetupFile
         Write-Output "Time taken: $((Get-Date).Subtract($start_time).Seconds) second(s)"
         
-        Write-Host "Installing Tentacle"
+        Write-Host "Installing DotNet"
         Start-Process $dotnetSetupFile  -ArgumentList "/q /norestart"
-        Write-Host "Tentacle Installed"
+        Write-Host "DotNet Installed"
     }
+    
     Function Main {
         param(
             [parameter(Mandatory = $true)]
